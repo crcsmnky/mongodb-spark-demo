@@ -24,7 +24,7 @@ public class Recommender {
     private static String MONGODB_HOST = "127.0.0.1:27017";
     private static String HDFS_HOST = "127.0.0.1:9000";
 
-    private static String MONGODB_OUTPUT = "movielens.predictions";
+    private static String MONGODB_OUTPUT = "/movielens.predictions";
     private static String RATINGS_FILE = "/work/movielens-small/ratings.bson";
     private static String USERS_FILE = "/work/movielens-small/users.bson";
     private static String MOVIES_FILE = "/work/movielens/movies.bson";
