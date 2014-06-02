@@ -21,8 +21,18 @@ import java.util.Date;
 
 public class Recommender {
 
-    private static String MONGODB = "127.0.0.1:27017";
-    private static String HDFS = "127.0.0.1:9000";
+    private static String MONGODB_HOST = "127.0.0.1:27017";
+    private static String HDFS_HOST = "127.0.0.1:9000";
+
+    private static String MONGODB_OUTPUT = "movielens.predictions";
+    private static String RATINGS_FILE = "/work/movielens-small/ratings.bson";
+    private static String USERS_FILE = "/work/movielens-small/users.bson";
+    private static String MOVIES_FILE = "/work/movielens/movies.bson";
+
+    private static String MONGODB_OUTPUT_URI = "mongodb://" + MONGODB_HOST + MONGODB_OUTPUT;
+    private static String RATINGS_URI = "hdfs://" + HDFS_HOST + RATINGS_FILE;
+    private static String USERS_URI = "hdfs://" + HDFS_HOST + USERS_FILE;
+    private static String MOVIES_URI = "hdfs://" + HDFS_HOST + MOVIES_FILE;
 
 	public static void main(String[] args) {
         JavaSparkContext sc = new JavaSparkContext("local", "Recommender");
@@ -31,10 +41,10 @@ public class Recommender {
         bsonDataConfig.set("mongo.job.input.format", "com.mongodb.hadoop.BSONFileInputFormat");
 
         Configuration predictionsConfig = new Configuration();
-        predictionsConfig.set("mongo.output.uri", "mongodb://" + MONGODB + "/movielens.predictions");
+        predictionsConfig.set("mongo.output.uri", MONGODB_OUTPUT_URI);
 
         JavaPairRDD<Object,BSONObject> bsonRatingsData = sc.newAPIHadoopFile(
-            "hdfs://" + HDFS + "/work/ratings.bson", BSONFileInputFormat.class, Object.class,
+            RATINGS_URI, BSONFileInputFormat.class, Object.class,
                 BSONObject.class, bsonDataConfig);
 
         JavaRDD<Rating> ratingsData = bsonRatingsData.map(
@@ -54,7 +64,7 @@ public class Recommender {
         // create the model from existing ratings data
         MatrixFactorizationModel model = ALS.train(ratingsData.rdd(), 1, 20, 0.01);
 
-        JavaRDD<Object> userData = sc.newAPIHadoopFile("hdfs://" + HDFS + "/work/users.bson",
+        JavaRDD<Object> userData = sc.newAPIHadoopFile(USERS_URI,
                 BSONFileInputFormat.class, Object.class, BSONObject.class, bsonDataConfig).map(
             new Function<Tuple2<Object, BSONObject>, Object>() {
                 @Override
@@ -64,7 +74,7 @@ public class Recommender {
             }
         );
 
-        JavaRDD<Object> movieData = sc.newAPIHadoopFile("hdfs://" + HDFS + "/work/movies.bson",
+        JavaRDD<Object> movieData = sc.newAPIHadoopFile(MOVIES_URI,
                 BSONFileInputFormat.class, Object.class, BSONObject.class, bsonDataConfig).map(
             new Function<Tuple2<Object, BSONObject>, Object>() {
                 @Override
