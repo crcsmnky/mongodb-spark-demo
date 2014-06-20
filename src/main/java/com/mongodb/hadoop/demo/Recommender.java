@@ -21,30 +21,31 @@ import java.util.Date;
 
 public class Recommender {
 
-    private static String MONGODB_HOST = "127.0.0.1:27017";
-    private static String HDFS_HOST = "127.0.0.1:9000";
-
-    private static String MONGODB_OUTPUT = "/movielens.predictions";
-    private static String RATINGS_FILE = "/work/movielens-small/ratings.bson";
-    private static String USERS_FILE = "/work/movielens-small/users.bson";
-    private static String MOVIES_FILE = "/work/movielens/movies.bson";
-
-    private static String MONGODB_OUTPUT_URI = "mongodb://" + MONGODB_HOST + MONGODB_OUTPUT;
-    private static String RATINGS_URI = "hdfs://" + HDFS_HOST + RATINGS_FILE;
-    private static String USERS_URI = "hdfs://" + HDFS_HOST + USERS_FILE;
-    private static String MOVIES_URI = "hdfs://" + HDFS_HOST + MOVIES_FILE;
+    private static String HDFS_HOST = "hdfs://127.0.0.1:9000";
+    private static String MONGODB_HOST = "mongodb://127.0.0.1:27017/";
 
 	public static void main(String[] args) {
+        if(args.length < 4) {
+            System.err.println("Usage: Recommender <ratings.bson hdfs path> <users.bson hdfs path> <movies.bson hdfs path> <outputdb.collection>");
+            System.err.println("Example: Recommender /movielens/ratings.bson /movielens/users.bson /movielens/movies.bson movielens.predictions");
+            System.exit(-1);
+        }
+
+        String ratingsUri = HDFS_HOST + args[0];
+        String usersUri =   HDFS_HOST + args[1];
+        String moviesUri =  HDFS_HOST + args[2];
+        String mongodbUri = MONGODB_HOST + args[3];
+
         JavaSparkContext sc = new JavaSparkContext("local", "Recommender");
 
         Configuration bsonDataConfig = new Configuration();
         bsonDataConfig.set("mongo.job.input.format", "com.mongodb.hadoop.BSONFileInputFormat");
 
         Configuration predictionsConfig = new Configuration();
-        predictionsConfig.set("mongo.output.uri", MONGODB_OUTPUT_URI);
+        predictionsConfig.set("mongo.output.uri", mongodbUri);
 
         JavaPairRDD<Object,BSONObject> bsonRatingsData = sc.newAPIHadoopFile(
-            RATINGS_URI, BSONFileInputFormat.class, Object.class,
+            ratingsUri, BSONFileInputFormat.class, Object.class,
                 BSONObject.class, bsonDataConfig);
 
         JavaRDD<Rating> ratingsData = bsonRatingsData.map(
@@ -62,9 +63,9 @@ public class Recommender {
         ratingsData.persist(StorageLevel.MEMORY_AND_DISK());
 
         // create the model from existing ratings data
-        MatrixFactorizationModel model = ALS.train(ratingsData.rdd(), 1, 20, 0.01);
+        MatrixFactorizationModel model = ALS.train(ratingsData.rdd(), 10, 20, 0.01);
 
-        JavaRDD<Object> userData = sc.newAPIHadoopFile(USERS_URI,
+        JavaRDD<Object> userData = sc.newAPIHadoopFile(usersUri,
                 BSONFileInputFormat.class, Object.class, BSONObject.class, bsonDataConfig).map(
             new Function<Tuple2<Object, BSONObject>, Object>() {
                 @Override
@@ -74,7 +75,7 @@ public class Recommender {
             }
         );
 
-        JavaRDD<Object> movieData = sc.newAPIHadoopFile(MOVIES_URI,
+        JavaRDD<Object> movieData = sc.newAPIHadoopFile(moviesUri,
                 BSONFileInputFormat.class, Object.class, BSONObject.class, bsonDataConfig).map(
             new Function<Tuple2<Object, BSONObject>, Object>() {
                 @Override
