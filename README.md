@@ -45,13 +45,14 @@ Deploy your JAR file to the appropriate location for your Hadoop distribution, e
 ## Running
 
     $ cd your-spark-directory
-    $ SPARK_JAR=./assembly/target/scala-2.10/spark-assembly-1.0.0-hadoop2.4.0.jar \
-        HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop \
-        ./bin/spark-submit --master yarn \
-        --deploy-mode cluster --class com.mongodb.hadoop.demo.Recommender \
-        --jars ../mongodb-hadoop-demo/target/lib/*.jar \
-        ../mongodb-hadoop-demo/target/mongodb-hadoop-demo-1.0-SNAPSHOT.jar
-
+    $ SPARK_JAR=assembly/target/scala-2.10/spark-assembly-1.0.0-hadoop2.4.0.jar \
+      HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop \
+      bin/spark-submit --master local --class com.mongodb.hadoop.demo.Recommender \
+      ~/Work/Dropbox/Projects/mongodb-hadoop-demo/target/demo-1.0-SNAPSHOT.jar \
+      --jars /path/to/mongo-java-driver-2.12.2.jar,/path/to/hadoop-1.2.1-SNAPSHOT.jar \
+      --executor-memory 4G /movielens/ratings.bson /movielens/users.bson \
+      /movielens/movies.bson movielens.predictions
+        
 ## Notes
 
-None
+None at this time.
