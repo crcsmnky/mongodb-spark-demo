@@ -1,4 +1,4 @@
-# MongoDB-Hadoop Demo
+# MongoDB-Spark Demo
 
 ## Prerequisites
 
