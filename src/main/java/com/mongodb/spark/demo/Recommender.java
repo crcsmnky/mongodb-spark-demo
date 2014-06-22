@@ -1,4 +1,4 @@
-package com.mongodb.hadoop.demo;
+package com.mongodb.spark.demo;
 
 import com.mongodb.hadoop.BSONFileInputFormat;
 import com.mongodb.hadoop.MongoOutputFormat;
